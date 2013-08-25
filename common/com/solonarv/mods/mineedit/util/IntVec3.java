@@ -2,6 +2,8 @@ package com.solonarv.mods.mineedit.util;
 
 import net.minecraft.util.Vec3;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 
 public class IntVec3 implements Cloneable{
     
@@ -70,10 +72,26 @@ public class IntVec3 implements Cloneable{
     
     @Override
     public boolean equals(Object other){
-        if(! (other instanceof IntVec3 || other instanceof Vec3)){
-            return false;
+        if(other instanceof Vec3){
+            Vec3 vec3=(Vec3) other;
+            return this.x==vec3.xCoord && this.y==vec3.yCoord && this.z==vec3.zCoord;
+        }else if(other instanceof IntVec3){
+            IntVec3 intVec3=(IntVec3) other;
+            return this.x==intVec3.x && this.y==intVec3.y && this.z==intVec3.z;
         }else{
-            // blah
+            return false;
         }
+    }
+    
+    /**
+     * Create a pair of vectors that describes the same cuboid as the given one such that
+     * vec2 - vec1 has only positive coords.
+     * @param vec1 Some vector
+     * @param vec2 Some vector
+     * @return A pair of vectors as described above.
+     */
+    public static ImmutablePair<IntVec3, IntVec3> orderIntVec3Pair(IntVec3 vec1, IntVec3 vec2){
+        return new ImmutablePair<IntVec3, IntVec3>(new IntVec3(Math.min(vec1.x, vec2.x), Math.min(vec1.y, vec2.y), Math.min(vec1.z, vec2.z)),
+                new IntVec3(Math.max(vec1.x, vec2.x), Math.max(vec1.y, vec2.y), Math.max(vec1.z, vec2.z)));
     }
 }

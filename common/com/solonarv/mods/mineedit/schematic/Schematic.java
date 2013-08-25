@@ -1,6 +1,8 @@
 package com.solonarv.mods.mineedit.schematic;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
@@ -8,8 +10,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagFloat;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeDirection;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.solonarv.mods.mineedit.util.IntVec3;
 import com.solonarv.mods.mineedit.util.MathUtil;
@@ -49,11 +54,11 @@ public class Schematic implements Cloneable{
     /**
      * The TileEntities included in the schematic.
      */
-    public ArrayList<NBTTagCompound> tileentities;
+    public List<NBTTagCompound> tileentities;
     /**
      * The entities included in the schematic.
      */
-    public ArrayList<NBTTagCompound> entities;
+    public List<NBTTagCompound> entities;
     public final int size;
     
     public Schematic(NBTTagCompound schematic){
@@ -113,6 +118,33 @@ public class Schematic implements Cloneable{
         this.materials="Alpha";
         this.blocks=new byte[this.width][this.height][this.length];
         this.extraBlockData=new byte[this.width][this.height][this.length];
+        Pair<IntVec3, IntVec3> orderedCorners = IntVec3.orderIntVec3Pair(corner1, corner2);
+        this.tileentities = new LinkedList<NBTTagCompound>();
+        this.entities = new LinkedList<NBTTagCompound>();
+        for(IntVec3 pos : IntVec3.getSubspace(orderedCorners.getLeft(), orderedCorners.getRight())){
+            IntVec3 relativePos = pos.difference(orderedCorners.getLeft());
+            int id = world.getBlockId(pos.x, pos.y, pos.z),
+                    meta = world.getBlockMetadata(pos.x, pos.y, pos.z);
+            this.blocks[relativePos.x][relativePos.y][relativePos.z] = (byte) id;
+            this.extraBlockData[relativePos.x][relativePos.y][relativePos.z] = (byte) ((id >> 4) | meta);
+            TileEntity te=world.getBlockTileEntity(pos.x, pos.y, pos.z);
+            if(te!=null){
+                NBTTagCompound nbt = new NBTTagCompound();
+                te.writeToNBT(nbt);
+                nbt.setInteger("x", nbt.getInteger("x") - orderedCorners.getLeft().x);
+                nbt.setInteger("y", nbt.getInteger("y") - orderedCorners.getLeft().y);
+                nbt.setInteger("z", nbt.getInteger("z") - orderedCorners.getLeft().z);
+                this.tileentities.add(nbt);
+            }
+        }
+        for(Object entityObj : world.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getAABBPool().getAABB(orderedCorners.getLeft().x, orderedCorners.getLeft().y, orderedCorners.getLeft().z, orderedCorners.getRight().x, orderedCorners.getRight().y, orderedCorners.getRight().z))){
+            Entity e = (Entity) entityObj;
+            NBTTagCompound nbt = new NBTTagCompound();
+            e.writeToNBT(nbt);
+            NBTTagList pos=nbt.getTagList("Pos");
+            
+            this.entities.add(nbt);
+        }
     }
 
     public NBTTagCompound toNBT(){
@@ -149,8 +181,8 @@ public class Schematic implements Cloneable{
         for(int x=ox; x<this.width+ox; x++)
             for(int y=oy; y<this.height+oy; y++)
                 for(int z=oz; z<this.length+oz; z++){
-                    int id=this.blocks[x][y][z] + (this.extraBlockData[x][y][z] >> 4);
-                    int meta=this.extraBlockData[x][y][z] % 16;
+                    int id=this.blocks[x][y][z] + (this.extraBlockData[x][y][z] & 0xf0) << 4;
+                    int meta=this.extraBlockData[x][y][z] & 0x0f;
                     world.setBlock(x, y, z, id, meta, flag);
                 }
         // Import TEs
