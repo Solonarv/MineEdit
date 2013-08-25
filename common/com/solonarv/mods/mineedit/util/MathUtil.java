@@ -1,9 +1,23 @@
 package com.solonarv.mods.mineedit.util;
 
+/**
+ * Generic Mathematical utility class
+ * @author Solonarv
+ *
+ */
 public class MathUtil {
+    /**
+     * @param angle an integer angle, in number of quarter turns
+     * @return the cosine of the given angle
+     */
     public static int cosineForIntAngle(int angle){
         return (angle & 1)!=0 ? 0 : (angle & 2) == 0 ? 1 : -1;
     }
+    
+    /**
+     * @param angle an integer angle, in number of quarter turns
+     * @return the sine of the given angle
+     */
     public static int sineForIntAngle(int angle){
         switch(angle & 3){
             case 0: case 2:

@@ -4,7 +4,11 @@ import net.minecraft.util.Vec3;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-
+/**
+ * Implementation of Z^3 as module over Z (basically 3D vectors with integer coordinates)
+ * @author Solonarv
+ *
+ */
 public class IntVec3 implements Cloneable{
     
     public IntVec3 NULL=new IntVec3(0, 0, 0);
@@ -13,6 +17,13 @@ public class IntVec3 implements Cloneable{
     public IntVec3 UNIT_Z=new IntVec3(0, 0, 1);
     
     public int x, y, z;
+    
+    /**
+     * Create a vector from its coordinates
+     * @param x
+     * @param y
+     * @param z
+     */
     public IntVec3(int x, int y, int z){
         this.x=x;
         this.y=y;
@@ -24,10 +35,23 @@ public class IntVec3 implements Cloneable{
         return new IntVec3(this.x, this.y, this.z);
     }
     
+    /**
+     * Use the vector coordinates as indices to access an element in a 3-dimensional array
+     * @param array
+     * @return
+     */
     public byte accessArray(byte[][][] array){
         return array[this.x][this.y][this.z];
     }
     
+    /**
+     * Same as accessArray, but reverses element order of subarrays if told to do so
+     * @param array
+     * @param flipX
+     * @param flipY
+     * @param flipZ
+     * @return
+     */
     public byte accessArraySigned(byte[][][] array, boolean flipX, boolean flipY, boolean flipZ){
         int x = flipX ? array.length - this.x - 1 : this.x;
         int y = flipY ? array[0].length - this.y - 1 : this.y;
@@ -36,40 +60,75 @@ public class IntVec3 implements Cloneable{
         
     }
     
+    /**
+     * Compute the cross product of two vectors
+     * @param other the vector to multiply by
+     * @return the cross product this x other
+     */
     public IntVec3 crossProduct(IntVec3 other){
         return new IntVec3(this.y*other.z - this.z*other.y, this.z*other.x - this.x*other.z, this.x*other.y - this.y*other.x);
     }
     
+    /**
+     * Compute the dot product of two vectors
+     * @param other the vector to multiply by
+     * @return the dot product this . other
+     */
     public int dotProduct(IntVec3 other){
         return this.x*other.x + this.y*other.y + this.z*other.z;
     }
     
+    /**
+     * Compute the scalar product of this vector and some integer
+     * @param scale the integer to multiply by
+     * @return the scalar product scale . other
+     */
     public IntVec3 scale(int scale){
         this.x*=scale;
         this.y*=scale;
         this.z*=scale;
         return this;
     }
-    public IntVec3 getScaled(int scale){
-        return this.clone().scale(scale);
-    }
-
+    
+    /**
+     * Creates a clone of this vector whose coordinates are the absolute values of this vector's
+     * @return
+     */
     public IntVec3 absoluteDims() {
         return new IntVec3(Math.abs(x), Math.abs(y), Math.abs(z));
     }
     
+    /**
+     * Compute the sum of two vectors
+     * @param other the vector to add to this one
+     * @return this + other
+     */
     public IntVec3 sum(IntVec3 other){
         return new IntVec3(this.x + other.x, this.y + other.y, this.z + other.z);
     }
     
+    /**
+     * Compute the difference of two vectors
+     * @param other the vector to subtract from this one
+     * @return this - other
+     */
     public IntVec3 difference(IntVec3 other){
         return new IntVec3(this.x - other.x, this.y - other.y, this.z - other.z);
     }
     
-    public static IntVec3Subspace getSubspace(IntVec3 start, IntVec3 end){
-        return new IntVec3Subspace(start, end);
+    /**
+     * Create an object representing a cuboid volume in the Z^3 space
+     * @param start one corner of the cuboid to create
+     * @param end another corner of the cuboid to create
+     * @return an axis-aligned cuboid with corners at start and end
+     */
+    public static IntVec3Volume getVolume(IntVec3 start, IntVec3 end){
+        return new IntVec3Volume(start, end);
     }
     
+    /**
+     * Equality check. Will return equality of coordinates if given an IntVec3 or a Vec3, false otherwise
+     */
     @Override
     public boolean equals(Object other){
         if(other instanceof Vec3){

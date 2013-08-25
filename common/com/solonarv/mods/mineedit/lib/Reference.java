@@ -1,5 +1,10 @@
 package com.solonarv.mods.mineedit.lib;
 
+/**
+ * Reference class to store some constants used throughout the mod
+ * @author Solonarv
+ *
+ */
 public class Reference {
     public final static String MOD_NAME     = "MienEdit";
     public final static String MOD_ID       = "mineedit";
