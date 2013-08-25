@@ -1,11 +1,19 @@
 package com.solonarv.mods.mineedit.schematic;
 
+import java.util.ArrayList;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagFloat;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraftforge.common.ForgeDirection;
+
+import com.solonarv.mods.mineedit.util.IntVec3;
+import com.solonarv.mods.mineedit.util.MathUtil;
+import com.solonarv.mods.mineedit.util.Matrix3x3Int;
 
 public class Schematic implements Cloneable{
     
@@ -41,11 +49,11 @@ public class Schematic implements Cloneable{
     /**
      * The TileEntities included in the schematic.
      */
-    public NBTTagCompound[] tileentities;
+    public ArrayList<NBTTagCompound> tileentities;
     /**
      * The entities included in the schematic.
      */
-    public NBTTagCompound[] entities;
+    public ArrayList<NBTTagCompound> entities;
     public final int size;
     
     public Schematic(NBTTagCompound schematic){
@@ -67,15 +75,15 @@ public class Schematic implements Cloneable{
                 }
         NBTTagList tiles = schematic.getTagList("TileEntities");
         int tilesLength=tiles.tagCount();
-        this.tileentities=new NBTTagCompound[tilesLength];
+        this.tileentities=new ArrayList<NBTTagCompound>(tilesLength);
         for(int i=0; i<tilesLength; i++){
-            this.tileentities[i]=(NBTTagCompound) tiles.tagAt(i);
+            this.tileentities.add((NBTTagCompound) tiles.tagAt(i));
         }
         NBTTagList entities = schematic.getTagList("Entities");
         int entitiesLength=tiles.tagCount();
-        this.entities=new NBTTagCompound[entitiesLength];
+        this.entities=new ArrayList<NBTTagCompound>(entitiesLength);
         for(int i=0; i<tilesLength; i++){
-            this.entities[i]=(NBTTagCompound) entities.tagAt(i);
+            this.entities.add((NBTTagCompound) entities.tagAt(i));
         }
     }
     
@@ -87,14 +95,24 @@ public class Schematic implements Cloneable{
         this.materials=source.materials;
         this.blocks=source.blocks.clone();
         this.extraBlockData=source.extraBlockData.clone();
-        this.tileentities=new NBTTagCompound[source.tileentities.length];
-        for (int i = 0; i < source.tileentities.length; i++) {
-            this.tileentities[i]=(NBTTagCompound) source.tileentities[i].copy();
+        this.tileentities=new ArrayList<NBTTagCompound>(source.tileentities.size());
+        for (NBTTagCompound tile : source.tileentities) {
+            this.tileentities.add((NBTTagCompound) tile.copy());
         }
-        this.entities=new NBTTagCompound[source.entities.length];
-        for (int i = 0; i < source.entities.length; i++) {
-            this.entities[i]=(NBTTagCompound) source.entities[i].copy();
+        this.entities=new ArrayList<NBTTagCompound>(source.entities.size());
+        for (NBTTagCompound entity : source.entities) {
+            this.entities.add((NBTTagCompound) entity.copy());
         }
+    }
+    
+    public Schematic(World world, IntVec3 corner1, IntVec3 corner2){
+        this.width=Math.abs(corner1.x - corner2.x);
+        this.height=Math.abs(corner1.y - corner2.y);
+        this.length=Math.abs(corner1.z - corner2.z);
+        this.size = this.width * this.length * this.height;
+        this.materials="Alpha";
+        this.blocks=new byte[this.width][this.height][this.length];
+        this.extraBlockData=new byte[this.width][this.height][this.length];
     }
 
     public NBTTagCompound toNBT(){
@@ -155,40 +173,101 @@ public class Schematic implements Cloneable{
     
     @Override
     public Schematic clone(){
-        Schematic s=new Schematic(this);
-        return s;
+        return new Schematic(this);
     }
     
-    public Schematic rotate(int angle){
-        if((angle & 3)==0){ // Skip all these steps if there is no actual rotation to do
-            if((angle & 2)!=0){
-                byte[][][] oldBlocks=this.blocks,
-                        oldData=this.extraBlockData;
-                this.blocks=new byte[this.width][this.height][this.length];
-                this.extraBlockData=new byte[this.width][this.height][this.length];
-                for(int x=0; x<this.width; x++)
-                    for(int y=0; y<this.height; y++)
-                        for(int z=0; z<this.length; z++){
-                            this.blocks[x][y][z]=oldBlocks[this.width - x - 1][y][this.length - z - 1];
-                            this.extraBlockData[x][y][z]=oldData[this.width - x - 1][y][this.length - z - 1];
-                        }
+    public Schematic rotate(int angle, ForgeDirection axis, boolean rotateEntityYaw){
+        if((angle & 3)!=0){ // Skip all these steps if there is no actual rotation to do
+            if((axis == ForgeDirection.WEST || axis == ForgeDirection.DOWN || axis == ForgeDirection.NORTH) && (angle & 1) !=0){
+                angle = 4 - angle;
             }
-            if((angle & 1)!=0){
-                byte[][][] oldBlocks=this.blocks,
-                        oldData=this.extraBlockData;
-                int temp=this.length;
-                this.length=this.width;
-                this.width=temp;
-                this.blocks=new byte[this.length][this.height][this.width];
-                this.extraBlockData=new byte[this.length][this.height][this.width];
-                for(int x=0; x<this.width; x++)
-                    for(int y=0; y<this.height; y++)
-                        for(int z=0; z<this.length; z++){
-                            // TODO Blargh rotation matrices in minecraft. Brain=hurt.
-                            //this.blocks[x][y][z]=oldBlocks
-                        }
+            Matrix3x3Int matrix = null;
+            switch(axis){
+                case WEST:
+                case EAST: // Rotation about x axis
+                    matrix = new Matrix3x3Int(new int[][]{{1, 0, 0},
+                            {0, MathUtil.cosineForIntAngle(angle), -MathUtil.sineForIntAngle(angle)},
+                            {0, MathUtil.sineForIntAngle(angle), MathUtil.cosineForIntAngle(angle)}});
+                    break;
+                case DOWN:
+                case UP: // Rotation about y axis
+                    matrix = new Matrix3x3Int(new int[][]{{MathUtil.cosineForIntAngle(angle), 0, MathUtil.sineForIntAngle(angle)},
+                            {0, 1, 0},
+                            {-MathUtil.sineForIntAngle(angle), 0, MathUtil.cosineForIntAngle(angle)}});
+                    break;
+                case NORTH:
+                case SOUTH: // Rotation about z axis
+                    matrix = new Matrix3x3Int(new int[][]{{MathUtil.cosineForIntAngle(angle), -MathUtil.sineForIntAngle(angle), 0},
+                            {MathUtil.sineForIntAngle(angle), MathUtil.cosineForIntAngle(angle), 0},
+                            {0, 0, 1}});
+                    break;
+                default:
+                    return this;
             }
+            if(rotateEntityYaw) for(NBTTagCompound e: this.entities){
+                NBTTagFloat yaw=(NBTTagFloat) e.getTagList("Rotation").tagAt(0);
+                yaw.data=(yaw.data + 90F*(angle & 3)) % 360F;
+            }
+            return this.applyMatrixTForm(matrix);
         }
+        return this;
+    }
+    
+    public Schematic applyMatrixTForm(Matrix3x3Int matrix){
+        // Rotate blocks, this is the hardest part
+        byte[][][] oldBlocks=this.blocks,
+                oldData=this.extraBlockData;
+        IntVec3 oldDimensions = new IntVec3(this.width, this.height, this.length);
+        IntVec3 newDimensionsRaw = matrix.applyToIntVec3(oldDimensions);
+        IntVec3 newDimensions = newDimensionsRaw.absoluteDims();
+        boolean flipX=newDimensions.x<0,
+                flipY=newDimensions.y<0,
+                flipZ=newDimensions.z<0;
+        this.blocks = new byte[newDimensions.x][newDimensions.y][newDimensions.z];
+        this.extraBlockData = new byte[newDimensions.x][newDimensions.y][newDimensions.z];
+        for(int x=0; x<newDimensions.x; x++)
+            for(int y=0; y<newDimensions.y; y++)
+                for(int z=0; z<newDimensions.z; z++){
+                    IntVec3 vec=new IntVec3(x, y, z);
+                    this.blocks[x][y][z] = vec.accessArraySigned(oldBlocks, flipX, flipY, flipZ);
+                    this.extraBlockData[x][y][z] = vec.accessArraySigned(oldData, flipX, flipY, flipZ);
+                }
+        // Rotate tile entity positions
+        for(NBTTagCompound e : this.tileentities){
+            IntVec3 newPosition = matrix.applyToIntVec3(new IntVec3(e.getInteger("x"), e.getInteger("y"), e.getInteger("z")));
+            e.setInteger("x", newPosition.x);
+            e.setInteger("y", newPosition.y);
+            e.setInteger("z", newPosition.z);
+        }
+        // Rotate entity positions
+        for(NBTTagCompound e : this.entities){
+            IntVec3 newPosition = matrix.applyToIntVec3(new IntVec3(e.getInteger("x"), e.getInteger("y"), e.getInteger("z")));
+            e.setInteger("x", newPosition.x);
+            e.setInteger("y", newPosition.y);
+            e.setInteger("z", newPosition.z);
+        }
+        return this;
+    }
+    
+    public Schematic mirror(ForgeDirection axis){
+        Matrix3x3Int matrix = null;
+        switch(axis){
+            case WEST:
+            case EAST:
+                matrix = new Matrix3x3Int(new int[][]{{-1,0,0},{0,1,0},{0,0,1}});
+                break;
+            case DOWN:
+            case UP:
+                matrix = new Matrix3x3Int(new int[][]{{1,0,0},{0,-1,0},{0,0,1}});
+                break;
+            case NORTH:
+            case SOUTH:
+                matrix = new Matrix3x3Int(new int[][]{{1,0,0},{0,1,0},{0,0,-1}});
+                break;
+            default:
+                return this;
+        }
+        this.applyMatrixTForm(matrix);
         return this;
     }
 }
