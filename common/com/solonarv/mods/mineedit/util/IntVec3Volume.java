@@ -67,14 +67,11 @@ public class IntVec3Volume implements Iterable<IntVec3> {
                 this.current = this.current.clone();
             } else throw new NoSuchElementException();
             if(this.current.x != this.end.x){
-                this.current.x+=this.xDir;
+                this.current=this.current.incrX(this.xDir);
             } else if(this.current.y != this.end.y){
-                this.current.y+=this.yDir;
-                this.current.x=0;
+                this.current=IntVec3.get(0, this.current.y + this.yDir, this.current.z);
             } else if(this.current.z != this.end.z){
-                this.current.z+=this.zDir;
-                this.current.x=0;
-                this.current.y=0;
+                this.current=IntVec3.get(0, 0, this.current.z + this.zDir);
             } else throw new NoSuchElementException();
             return this.current;
         }
@@ -93,7 +90,7 @@ public class IntVec3Volume implements Iterable<IntVec3> {
      * Create an iterator over this object
      */
     @Override
-    public Iterator<IntVec3> iterator() {
+    public IntVec3SubspaceIterator iterator() {
         return new IntVec3SubspaceIterator(this);
     }
     

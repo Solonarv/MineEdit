@@ -6,6 +6,9 @@ package com.solonarv.mods.mineedit.util;
  *
  */
 public class MathUtil {
+    
+    public static final double TAU = 2*Math.PI;
+    
     /**
      * @param angle an integer angle, in number of quarter turns
      * @return the cosine of the given angle

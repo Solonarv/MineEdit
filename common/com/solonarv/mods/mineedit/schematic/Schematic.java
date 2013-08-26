@@ -18,6 +18,7 @@ import net.minecraftforge.common.ForgeDirection;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.solonarv.mods.mineedit.util.IntVec3;
+import com.solonarv.mods.mineedit.util.IntVec3Volume;
 import com.solonarv.mods.mineedit.util.MathUtil;
 import com.solonarv.mods.mineedit.util.Matrix3x3Int;
 
@@ -177,6 +178,14 @@ public class Schematic{
         }
     }
     
+    public Schematic(World world, IntVec3Volume volume){
+        this(world, volume.start, volume.end);
+    }
+    
+    public Schematic(World world, int x1, int y1, int z1, int x2, int y2, int z2){
+        this(world, IntVec3.get(x1, y1, z1), IntVec3.get(x2, y2, z2));
+    }
+    
     /**
      * Write this schematic to NBT in the default .schematic format
      * @return An {@link NBTTagCompound} representing this schematic
@@ -213,7 +222,7 @@ public class Schematic{
      * Import this schematic into a world.
      * This will place all included blocks, tile entities and entities in the correct positions.
      * <br><code>
-     * (new Schematic(world, new IntVec3(x,y,z), new IntVec3(x+w,y+h,z+l).importIntoWorld(world,x,y,z,false))
+     * (new Schematic(world, IntVec3.get(x,y,z), IntVec3.get(x+w,y+h,z+l).importIntoWorld(world,x,y,z,false))
      * </code><br>
      * should be a no-op, where w,h,l are positive.
      * @param world The {@link World} to import into
@@ -307,7 +316,7 @@ public class Schematic{
         // Rotate blocks, this is the hardest part
         byte[][][] oldBlocks=this.blocks,
                 oldData=this.extraBlockData;
-        IntVec3 oldDimensions = new IntVec3(this.width, this.height, this.length);
+        IntVec3 oldDimensions = IntVec3.get(this.width, this.height, this.length);
         IntVec3 newDimensionsRaw = matrix.applyToIntVec3(oldDimensions);
         IntVec3 newDimensions = newDimensionsRaw.absoluteDims();
         boolean flipX=newDimensions.x<0,
@@ -318,20 +327,20 @@ public class Schematic{
         for(int x=0; x<newDimensions.x; x++)
             for(int y=0; y<newDimensions.y; y++)
                 for(int z=0; z<newDimensions.z; z++){
-                    IntVec3 vec=new IntVec3(x, y, z);
+                    IntVec3 vec=IntVec3.get(x, y, z);
                     this.blocks[x][y][z] = vec.accessArraySigned(oldBlocks, flipX, flipY, flipZ);
                     this.extraBlockData[x][y][z] = vec.accessArraySigned(oldData, flipX, flipY, flipZ);
                 }
         // Rotate tile entity positions
         for(NBTTagCompound e : this.tileentities){
-            IntVec3 newPosition = matrix.applyToIntVec3(new IntVec3(e.getInteger("x"), e.getInteger("y"), e.getInteger("z")));
+            IntVec3 newPosition = matrix.applyToIntVec3(IntVec3.get(e.getInteger("x"), e.getInteger("y"), e.getInteger("z")));
             e.setInteger("x", newPosition.x);
             e.setInteger("y", newPosition.y);
             e.setInteger("z", newPosition.z);
         }
         // Rotate entity positions
         for(NBTTagCompound e : this.entities){
-            IntVec3 newPosition = matrix.applyToIntVec3(new IntVec3(e.getInteger("x"), e.getInteger("y"), e.getInteger("z")));
+            IntVec3 newPosition = matrix.applyToIntVec3(IntVec3.get(e.getInteger("x"), e.getInteger("y"), e.getInteger("z")));
             e.setInteger("x", newPosition.x);
             e.setInteger("y", newPosition.y);
             e.setInteger("z", newPosition.z);

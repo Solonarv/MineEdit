@@ -1,6 +1,11 @@
 package com.solonarv.mods.mineedit.util;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Random;
+
 import net.minecraft.util.Vec3;
+import net.minecraft.util.Vec3Pool;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -10,13 +15,14 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
  *
  */
 public class IntVec3 implements Cloneable{
+
+    // Keep at most 64 vectors on hand
+    private static final int MAX_CACHE_SIZE = 64;
     
-    public IntVec3 NULL=new IntVec3(0, 0, 0);
-    public IntVec3 UNIT_X=new IntVec3(1, 0, 0);
-    public IntVec3 UNIT_Y=new IntVec3(0, 1, 0);
-    public IntVec3 UNIT_Z=new IntVec3(0, 0, 1);
+    public final int x, y, z;
     
-    public int x, y, z;
+    private static final LinkedList<IntVec3> vectorCache = new LinkedList<IntVec3>();
+    private static final Random rng=new Random();
     
     /**
      * Create a vector from its coordinates
@@ -24,7 +30,7 @@ public class IntVec3 implements Cloneable{
      * @param y
      * @param z
      */
-    public IntVec3(int x, int y, int z){
+    private IntVec3(int x, int y, int z){
         this.x=x;
         this.y=y;
         this.z=z;
@@ -32,7 +38,7 @@ public class IntVec3 implements Cloneable{
     
     @Override
     public IntVec3 clone(){
-        return new IntVec3(this.x, this.y, this.z);
+        return get(this.x, this.y, this.z);
     }
     
     /**
@@ -66,7 +72,7 @@ public class IntVec3 implements Cloneable{
      * @return the cross product this x other
      */
     public IntVec3 crossProduct(IntVec3 other){
-        return new IntVec3(this.y*other.z - this.z*other.y, this.z*other.x - this.x*other.z, this.x*other.y - this.y*other.x);
+        return get(this.y*other.z - this.z*other.y, this.z*other.x - this.x*other.z, this.x*other.y - this.y*other.x);
     }
     
     /**
@@ -84,10 +90,7 @@ public class IntVec3 implements Cloneable{
      * @return the scalar product scale . other
      */
     public IntVec3 scale(int scale){
-        this.x*=scale;
-        this.y*=scale;
-        this.z*=scale;
-        return this;
+        return get(this.x*scale, this.y*scale, this.z*scale);
     }
     
     /**
@@ -95,7 +98,7 @@ public class IntVec3 implements Cloneable{
      * @return
      */
     public IntVec3 absoluteDims() {
-        return new IntVec3(Math.abs(x), Math.abs(y), Math.abs(z));
+        return get(Math.abs(x), Math.abs(y), Math.abs(z));
     }
     
     /**
@@ -104,7 +107,7 @@ public class IntVec3 implements Cloneable{
      * @return this + other
      */
     public IntVec3 sum(IntVec3 other){
-        return new IntVec3(this.x + other.x, this.y + other.y, this.z + other.z);
+        return get(this.x + other.x, this.y + other.y, this.z + other.z);
     }
     
     /**
@@ -113,7 +116,7 @@ public class IntVec3 implements Cloneable{
      * @return this - other
      */
     public IntVec3 difference(IntVec3 other){
-        return new IntVec3(this.x - other.x, this.y - other.y, this.z - other.z);
+        return get(this.x - other.x, this.y - other.y, this.z - other.z);
     }
     
     /**
@@ -123,7 +126,7 @@ public class IntVec3 implements Cloneable{
      * @return an axis-aligned cuboid with corners at start and end
      */
     public static IntVec3Volume getVolume(IntVec3 start, IntVec3 end){
-        return new IntVec3Volume(start, end);
+        return getVolume(start, end);
     }
     
     /**
@@ -150,7 +153,52 @@ public class IntVec3 implements Cloneable{
      * @return A pair of vectors as described above.
      */
     public static ImmutablePair<IntVec3, IntVec3> orderIntVec3Pair(IntVec3 vec1, IntVec3 vec2){
-        return new ImmutablePair<IntVec3, IntVec3>(new IntVec3(Math.min(vec1.x, vec2.x), Math.min(vec1.y, vec2.y), Math.min(vec1.z, vec2.z)),
-                new IntVec3(Math.max(vec1.x, vec2.x), Math.max(vec1.y, vec2.y), Math.max(vec1.z, vec2.z)));
+        return new ImmutablePair<IntVec3, IntVec3>(get(Math.min(vec1.x, vec2.x), Math.min(vec1.y, vec2.y), Math.min(vec1.z, vec2.z)),
+                get(Math.max(vec1.x, vec2.x), Math.max(vec1.y, vec2.y), Math.max(vec1.z, vec2.z)));
+    }
+
+    public Vec3 getVec3() {
+        return this.getVec3FromPool(Vec3.fakePool);
+    }
+    
+    public Vec3 getVec3FromPool(Vec3Pool pool){
+        return pool.getVecFromPool(this.x, this.y, this.z);
+    }
+    
+    public double norm(){
+        return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z);
+    }
+    
+    public IntVec3 incrX(int dx){
+        return get(this.x + dx, this.y, this.z);
+    }
+    
+    public IntVec3 incrY(int dy){
+        return get(this.x, this.y + dy, this.z);
+    }
+    
+    public IntVec3 incrZ(int dz){
+        return get(this.x, this.y, this.z + dz);
+    }
+
+    public static IntVec3 get(int x, int y, int z) {
+        IntVec3 vec=null;
+        Iterator<IntVec3> iterator=vectorCache.iterator();
+        while(iterator.hasNext()){
+            IntVec3 v=iterator.next();
+            if(v.x==x && v.y==y && v.z==z){
+                vec=v;
+                iterator.remove();
+                break;
+            }
+        }
+        if(vec==null){
+            vec = new IntVec3(x, y, z);
+            while(vectorCache.size() >= MAX_CACHE_SIZE){
+                vectorCache.removeLast();
+            }
+        }
+        vectorCache.addFirst(vec);
+        return vec;
     }
 }

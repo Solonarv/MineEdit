@@ -24,7 +24,7 @@ public class MineEdit {
     public MineEdit instance;
     
     @SidedProxy(clientSide=Reference.CLIENT_PROXY, serverSide=Reference.COMMON_PROXY)
-    public CommonProxy proxy;
+    public static CommonProxy proxy;
     
     @EventHandler
     public void preInit(FMLPreInitializationEvent event){
