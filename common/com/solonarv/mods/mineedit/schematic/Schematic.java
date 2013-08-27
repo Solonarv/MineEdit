@@ -17,10 +17,10 @@ import net.minecraftforge.common.ForgeDirection;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.solonarv.mods.mineedit.util.IntVec3;
-import com.solonarv.mods.mineedit.util.IntVec3Volume;
+import com.solonarv.mods.mineedit.math.module.IntVec3;
+import com.solonarv.mods.mineedit.math.module.IntVec3Volume;
+import com.solonarv.mods.mineedit.math.module.Matrix3x3Int;
 import com.solonarv.mods.mineedit.util.MathUtil;
-import com.solonarv.mods.mineedit.util.Matrix3x3Int;
 
 /**
  * Schematic class. Allows importing and exporting of stuff in the .schematic format

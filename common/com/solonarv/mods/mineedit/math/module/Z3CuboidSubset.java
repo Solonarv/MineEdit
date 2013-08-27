@@ -1,4 +1,4 @@
-package com.solonarv.mods.mineedit.util;
+package com.solonarv.mods.mineedit.math.module;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
 
 public class Z3CuboidSubset implements Set<IntVec3> {
     

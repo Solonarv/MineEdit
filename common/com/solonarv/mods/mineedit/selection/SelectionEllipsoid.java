@@ -3,8 +3,8 @@ package com.solonarv.mods.mineedit.selection;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-import com.solonarv.mods.mineedit.util.IntVec3;
-import com.solonarv.mods.mineedit.util.IntVec3Volume;
+import com.solonarv.mods.mineedit.math.module.IntVec3;
+import com.solonarv.mods.mineedit.math.module.IntVec3Volume;
 
 public class SelectionEllipsoid extends SelectionArbitrary {
 

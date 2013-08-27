@@ -1,4 +1,4 @@
-package com.solonarv.mods.mineedit.util;
+package com.solonarv.mods.mineedit.math.module;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -8,6 +8,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.util.Vec3Pool;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+
 
 /**
  * Implementation of Z^3 as module over Z (basically 3D vectors with integer coordinates)

@@ -1,9 +1,10 @@
 package com.solonarv.mods.mineedit.util;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 
 import net.minecraft.block.Block;
+import net.minecraft.util.MathHelper;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -32,12 +33,24 @@ public class BlockNames {
         mapping.put(name, id);
     }
     
-    public static Block getBlockForName(String name){
-        return Block.blocksList[mapping.get(name)];
+    public static int getBlockIDForName(String name){
+        return mapping.containsKey(name) ? mapping.get(name) : -1;
     }
     
-    public static Set<String> getPartialMatches(String start){
-        Set<String> result = new HashSet<String>();
+    public static int getBlockForIDString(String id){
+        if(id == null || id.length() == 0){
+            return -1;
+        } else if(id.length() >= 3 && id.toLowerCase().startsWith("0x")){
+            int parsedID = Integer.parseInt(id.substring(2), 16);
+            return MathHelper.clamp_int(parsedID, 0, Block.blocksList.length);
+        } else if(id.length() >= 1){
+            int parsedID = Integer.parseInt(id);
+            return MathHelper.clamp_int(parsedID, 0, Block.blocksList.length);
+        } else return -1;
+    }
+    
+    public static List<String> getPartialMatches(String start){
+        List<String> result = new LinkedList<String>();
         for(String key : mapping.keySet()){
             if(key.startsWith(start)){
                 result.add(key);

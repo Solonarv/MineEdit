@@ -6,8 +6,8 @@ import net.minecraft.world.World;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.solonarv.mods.mineedit.util.IntVec3;
-import com.solonarv.mods.mineedit.util.Z3CuboidSubset;
+import com.solonarv.mods.mineedit.math.module.IntVec3;
+import com.solonarv.mods.mineedit.math.module.Z3CuboidSubset;
 
 public class SelectionArbitrary extends Selection {
     

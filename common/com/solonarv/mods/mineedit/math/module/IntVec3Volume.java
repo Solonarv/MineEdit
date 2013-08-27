@@ -1,7 +1,8 @@
-package com.solonarv.mods.mineedit.util;
+package com.solonarv.mods.mineedit.math.module;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
 
 /**
  * An axis-aligned cuboid in the Z^3 module over the ring of integers.

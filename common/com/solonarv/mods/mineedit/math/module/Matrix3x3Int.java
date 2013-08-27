@@ -1,4 +1,4 @@
-package com.solonarv.mods.mineedit.util;
+package com.solonarv.mods.mineedit.math.module;
 
 /**
  * A 3x3 square marix
